@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Nexus</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
 </head>
 <body>
 
@@ -54,6 +56,15 @@
 
     <div id="compose">
       <textarea id="post-text" placeholder="Quoi de neuf ?"></textarea>
+        <!-- Ajout photo -->
+  <div style="margin-bottom:10px">
+    <label for="post-image" style="cursor:pointer;color:var(--accent);font-size:0.9rem">
+      📷 Ajouter une photo
+    </label>
+    <input type="file" id="post-image" accept="image/*" style="display:none">
+    <div id="image-preview" style="margin-top:8px"></div>
+  </div>
+      
       <button onclick="createPost()">Publier</button>
     </div>
 
@@ -61,6 +72,48 @@
   <div id="posts-list"></div>
 
   <!-- Vue profil (cachée au départ) -->
+  <div id="view-profile" style="display:none">
+    <div id="profile-cover"></div>
+    <div id="profile-info">
+          <div style="margin-bottom:16px">
+    <img id="profile-avatar-img" src="" style="display:none;width:72px;height:72px;border-radius:50%;object-fit:cover">
+    <label for="avatar-input" style="cursor:pointer;color:var(--accent);font-size:0.85rem;display:block;margin-top:8px">
+      📷 Changer la photo
+    </label>
+    <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar(this)">
+  </div>
+      <h2 id="profile-name"></h2>
+      <p id="profile-username"></p>
+      <p id="profile-bio"></p>
+      <div id="profile-stats">
+        <span id="stat-posts">0 posts</span>
+        <span id="stat-likes">0 likes reçus</span>
+      </div>
+      <button onclick="toggleEditProfile()">Modifier le profil</button>
+    </div>
+
+    <!-- Formulaire d'édition (caché au départ) -->
+    <div id="profile-edit" style="display:none">
+      <input type="text" id="edit-name" placeholder="Ton nom">
+      <textarea id="edit-bio" placeholder="Ta bio..."></textarea>
+      <button onclick="saveProfile()">Enregistrer</button>
+      <button onclick="toggleEditProfile()">Annuler</button>
+    </div>
+
+    <!-- Posts du profil -->
+    <div id="profile-posts"></div>
+  </div>
+
+
+  </div>
+
+
+
+
+
+  <script src="app.js"></script>
+</body>
+</html>
   <div id="view-profile" style="display:none">
     <div id="profile-cover"></div>
     <div id="profile-info">
