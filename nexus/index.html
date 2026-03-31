@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Nexus</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ÉCRAN 1 : Auth -->
+  <div id="auth-screen">
+    <div class="auth-box">
+      <h1>Nexus</h1>
+      <p class="auth-subtitle">Ton espace, ta voix.</p>
+
+      <!-- Formulaire CONNEXION -->
+      <div id="login-form">
+        <input type="text"     id="login-username" placeholder="Ton pseudo">
+        <input type="password" id="login-password" placeholder="Mot de passe">
+        <button onclick="login()">Se connecter</button>
+      </div>
+
+      <!-- Formulaire INSCRIPTION -->
+      <div id="register-form" style="display:none">
+        <input type="text"     id="reg-name"     placeholder="Ton prénom">
+        <input type="text"     id="reg-username" placeholder="Choisis un pseudo">
+        <input type="password" id="reg-password" placeholder="Choisis un mot de passe">
+        <button onclick="register()">Créer mon compte</button>
+      </div>
+
+      <!-- Message d'erreur -->
+      <p id="auth-error"></p>
+
+      <!-- Boutons switch -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('login')">Connexion</button>
+        <button class="tab-btn"        onclick="switchTab('register')">Inscription</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ÉCRAN 2 : App -->
+  <div id="app" style="display:none">
+
+ <div id="app-header">
+  <h1>Nexus</h1>
+  <div style="display:flex; gap:8px">
+    <button onclick="showView('feed')">🏠</button>
+    <button onclick="showView('profile')">👤</button>
+    <button onclick="logout()">Déconnexion</button>
+  </div>
+</div>
+
+    <div id="compose">
+      <textarea id="post-text" placeholder="Quoi de neuf ?"></textarea>
+      <button onclick="createPost()">Publier</button>
+    </div>
+
+    <!-- Liste des posts -->
+  <div id="posts-list"></div>
+
+  <!-- Vue profil (cachée au départ) -->
+  <div id="view-profile" style="display:none">
+    <div id="profile-cover"></div>
+    <div id="profile-info">
+      <h2 id="profile-name"></h2>
+      <p id="profile-username"></p>
+      <p id="profile-bio"></p>
+      <div id="profile-stats">
+        <span id="stat-posts">0 posts</span>
+        <span id="stat-likes">0 likes reçus</span>
+      </div>
+      <button onclick="toggleEditProfile()">Modifier le profil</button>
+    </div>
+
+    <!-- Formulaire d'édition (caché au départ) -->
+    <div id="profile-edit" style="display:none">
+      <input type="text" id="edit-name" placeholder="Ton nom">
+      <textarea id="edit-bio" placeholder="Ta bio..."></textarea>
+      <button onclick="saveProfile()">Enregistrer</button>
+      <button onclick="toggleEditProfile()">Annuler</button>
+    </div>
+
+    <!-- Posts du profil -->
+    <div id="profile-posts"></div>
+  </div>
+
+
+  </div>
+
+
+
+
+
+  <script src="app.js"></script>
+</body>
+</html>

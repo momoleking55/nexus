@@ -1,0 +1,414 @@
+/* ── Variables globales ── */
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --border: #2a2a3a;
+  --accent: #7c5cfc;
+  --accent2: #fc5c7d;
+  --text: #f0f0f8;
+  --muted: #6a6a8a;
+}
+
+/* ── Reset ── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ══════════════════════════
+   ÉCRAN AUTH
+══════════════════════════ */
+#auth-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 400px;
+}
+
+#auth-screen h1 {
+  font-size: 2.4rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 28px;
+}
+
+/* Onglets */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: auto;
+  margin: 0;
+}
+
+.tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Inputs */
+input, textarea {
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--accent);
+}
+
+/* Boutons */
+button {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-top: 4px;
+}
+
+button:hover {
+  opacity: 0.85;
+}
+
+#auth-error {
+  color: var(--accent2);
+  font-size: 0.85rem;
+  margin-top: 10px;
+  min-height: 20px;
+  text-align: center;
+}
+
+/* ══════════════════════════
+   APP
+══════════════════════════ */
+#app {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100vh;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+/* Header */
+#app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+}
+
+#app-header h1 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+#app-header button {
+  width: auto;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 50px;
+  margin: 0;
+}
+
+#app-header button:hover {
+  border-color: var(--accent2);
+  color: var(--accent2);
+  opacity: 1;
+}
+
+/* Zone de publication */
+#compose {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+#compose textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  resize: none;
+  height: 80px;
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+#compose textarea::placeholder {
+  color: var(--muted);
+}
+
+#compose button {
+  width: auto;
+  padding: 8px 24px;
+  border-radius: 50px;
+  font-weight: 700;
+  margin: 0;
+  float: right;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+}
+
+/* Carte post */
+.post-card {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.post-card:hover {
+  background: #ffffff06;
+}
+
+.post-card strong {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.post-card span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-left: 6px;
+}
+
+/* Texte du post dans un rectangle */
+.post-text {
+  margin: 10px 0 14px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  line-height: 1.6;
+  font-size: 0.97rem;
+}
+
+/* Boutons côte à côte */
+.post-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.post-actions button {
+  width: auto;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  margin: 0;
+  transition: all 0.2s;
+}
+
+.post-actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* Commentaires */
+.comments-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.comments-section input {
+  margin-bottom: 8px;
+  font-size: 0.88rem;
+  padding: 8px 14px;
+}
+
+.comments-section button {
+  width: auto;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.comment-item {
+  padding: 8px 0;
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+.comment-item:last-child {
+  border: none;
+}
+
+.comment-item strong {
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+/* Bouton supprimer */
+.btn-delete {
+  float: right;
+  width: auto;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 4px 12px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  margin: 0;
+  transition: all 0.2s;
+}
+
+.btn-delete:hover {
+  border-color: var(--accent2);
+  color: var(--accent2);
+  opacity: 1;
+}
+/* ── Navigation header ── */
+#app-header div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#app-header div button {
+  width: auto;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 50px;
+  margin: 0;
+}
+
+#app-header div button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* ── Profil ── */
+#profile-cover {
+  height: 100px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  opacity: 0.6;
+}
+
+#profile-info {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+#profile-info h2 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+#profile-info p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+#profile-stats {
+  display: flex;
+  gap: 20px;
+  margin: 12px 0 16px;
+  font-size: 0.9rem;
+}
+
+#profile-stats span {
+  color: var(--text);
+  font-weight: 600;
+}
+
+#profile-info button {
+  width: auto;
+  padding: 8px 18px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  margin: 0;
+}
+
+#profile-edit {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+#profile-edit textarea {
+  resize: none;
+  height: 80px;
+}
+
+#profile-edit button {
+  width: auto;
+  padding: 8px 18px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  margin: 0 8px 0 0;
+}
