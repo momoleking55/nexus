@@ -476,3 +476,75 @@ if (savedUser) {
   document.getElementById('app').style.display = 'block'
   renderPosts()
 }
+
+// ── Chatbot ──
+let chatHistory = []
+let chatOpen = false
+
+function toggleChat() {
+  chatOpen = !chatOpen
+  const window_ = document.getElementById('chat-window')
+  window_.style.display = chatOpen ? 'flex' : 'none'
+
+  if (chatOpen && chatHistory.length === 0) {
+    addChatMessage('assistant', 'Bonjour ! Je suis ton assistant Nexus 👋 Comment puis-je t\'aider ?')
+  }
+
+  if (chatOpen) {
+    setTimeout(function() {
+      document.getElementById('chat-input').focus()
+    }, 100)
+  }
+}
+
+function addChatMessage(role, text) {
+  const messages = document.getElementById('chat-messages')
+  const div      = document.createElement('div')
+
+  div.style.cssText = role === 'user'
+    ? 'background:var(--accent);color:#fff;padding:10px 14px;border-radius:14px 14px 4px 14px;font-size:0.88rem;align-self:flex-end;max-width:80%'
+    : 'background:var(--surface2, #1a1a26);color:var(--text);padding:10px 14px;border-radius:14px 14px 14px 4px;font-size:0.88rem;align-self:flex-start;max-width:80%;border:1px solid var(--border)'
+
+  div.textContent = text
+  messages.appendChild(div)
+  messages.scrollTop = messages.scrollHeight
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input')
+  const text  = input.value.trim()
+  if (!text) return
+
+  input.value = ''
+  addChatMessage('user', text)
+
+  // Message de chargement
+  const loading = document.createElement('div')
+  loading.style.cssText = 'color:var(--muted);font-size:0.85rem;align-self:flex-start;padding:8px 14px'
+  loading.textContent = '...'
+  loading.id = 'chat-loading'
+  document.getElementById('chat-messages').appendChild(loading)
+
+  chatHistory.push({ role: 'user', content: text })
+
+  try {
+    const response = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        history: chatHistory.slice(-6)
+      })
+    })
+
+    const data = await response.json()
+
+    document.getElementById('chat-loading')?.remove()
+    addChatMessage('assistant', data.reply)
+    chatHistory.push({ role: 'assistant', content: data.reply })
+
+  } catch (err) {
+    document.getElementById('chat-loading')?.remove()
+    addChatMessage('assistant', 'Désolé, une erreur s\'est produite 😕')
+  }
+}
