@@ -306,6 +306,27 @@ async function renderProfile() {
   document.getElementById('stat-posts').textContent       = posts.length + ' posts'
   document.getElementById('stat-likes').textContent       = totalLikes + ' likes reçus'
 
+  // Compter ses followers
+const { count: followersCount } = await db
+  .from('follows')
+  .select('*', { count: 'exact' })
+  .eq('following', currentUser.username)
+
+const { count: followingCount } = await db
+  .from('follows')
+  .select('*', { count: 'exact' })
+  .eq('follower', currentUser.username)
+
+document.getElementById('stat-posts').textContent   = posts.length + ' posts'
+document.getElementById('stat-likes').textContent   = totalLikes + ' likes reçus'
+
+// Ajouter followers/following si pas déjà présents
+let statsDiv = document.getElementById('profile-stats')
+statsDiv.innerHTML =
+  '<span><strong>' + posts.length + '</strong> <span style="color:var(--muted)">posts</span></span>' +
+  '<span><strong>' + (followersCount || 0) + '</strong> <span style="color:var(--muted)">followers</span></span>' +
+  '<span><strong>' + (followingCount || 0) + '</strong> <span style="color:var(--muted)">following</span></span>'
+
   const avatarImg = document.getElementById('profile-avatar-img')
   if (currentUser.avatar_url) {
     avatarImg.src = currentUser.avatar_url
@@ -366,6 +387,22 @@ async function showUserProfile(username) {
   document.getElementById('user-username').textContent = '@' + user.username
   document.getElementById('user-bio').textContent      = user.bio || 'Aucune bio.'
 
+  // Vérifier si on follow déjà
+  const { data: followData } = await db
+    .from('follows')
+    .select('id')
+    .eq('follower', currentUser.username)
+    .eq('following', username)
+    .single()
+
+  const isFollowing = !!followData
+
+  // Compter les followers
+  const { count: followersCount } = await db
+    .from('follows')
+    .select('*', { count: 'exact' })
+    .eq('following', username)
+
   const { data: posts } = await db
     .from('posts')
     .select('*')
@@ -373,8 +410,27 @@ async function showUserProfile(username) {
     .order('created_at', { ascending: false })
 
   const totalLikes = posts.reduce(function(sum, p) { return sum + p.likes.length }, 0)
+
   document.getElementById('user-stat-posts').textContent = posts.length
   document.getElementById('user-stat-likes').textContent = totalLikes
+
+  // Ajouter les stats followers + bouton follow
+  const statsDiv = document.getElementById('user-stat-posts').parentElement
+  statsDiv.innerHTML =
+    '<span><strong>' + posts.length + '</strong> <span style="color:var(--muted)">posts</span></span>' +
+    '<span><strong>' + totalLikes + '</strong> <span style="color:var(--muted)">likes</span></span>' +
+    '<span><strong id="followers-count">' + (followersCount || 0) + '</strong> <span style="color:var(--muted)">followers</span></span>'
+
+  // Bouton follow
+  const followBtn = document.createElement('button')
+  followBtn.id          = 'follow-btn'
+  followBtn.textContent = isFollowing ? '✓ Suivi' : '+ Suivre'
+  followBtn.style.cssText = 'width:auto;padding:8px 20px;border-radius:50px;margin-top:12px;font-size:0.9rem;' +
+    (isFollowing
+      ? 'background:transparent;border:1px solid var(--border);color:var(--muted)'
+      : 'background:var(--accent);border:none;color:#fff')
+  followBtn.onclick = function() { toggleFollow(username) }
+  statsDiv.appendChild(followBtn)
 
   const list = document.getElementById('user-posts')
   list.innerHTML = ''
@@ -624,4 +680,45 @@ async function searchHashtag(tag) {
       '</div>'
     results.appendChild(div)
   })
+}
+
+
+
+// ── Follow / Unfollow ──
+async function toggleFollow(username) {
+  const btn = document.getElementById('follow-btn')
+
+  const { data: existing } = await db
+    .from('follows')
+    .select('id')
+    .eq('follower', currentUser.username)
+    .eq('following', username)
+    .single()
+
+  if (existing) {
+    // Unfollow
+    await db.from('follows').delete().eq('id', existing.id)
+    btn.textContent = '+ Suivre'
+    btn.style.background = 'var(--accent)'
+    btn.style.border = 'none'
+    btn.style.color = '#fff'
+  } else {
+    // Follow
+    await db.from('follows').insert({
+      follower:  currentUser.username,
+      following: username
+    })
+    btn.textContent = '✓ Suivi'
+    btn.style.background = 'transparent'
+    btn.style.border = '1px solid var(--border)'
+    btn.style.color = 'var(--muted)'
+  }
+
+  // Mettre à jour le compteur
+  const { count } = await db
+    .from('follows')
+    .select('*', { count: 'exact' })
+    .eq('following', username)
+
+  document.getElementById('followers-count').textContent = count || 0
 }
