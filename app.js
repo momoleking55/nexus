@@ -13,6 +13,14 @@ function formatDate(dateStr) {
   })
 }
 
+// ── Formater les mentions et hashtags ──
+function formatText(text) {
+  return text
+    .replace(/\n/g, '<br>')
+    .replace(/@(\w+)/g, '<span onclick="showUserProfile(\'$1\')" style="color:var(--accent);cursor:pointer;font-weight:600">@$1</span>')
+    .replace(/#(\w+)/g, '<span onclick="searchHashtag(\'$1\')" style="color:var(--accent2);cursor:pointer;font-weight:600">#$1</span>')
+}
+
 // ── Connexion ──
 async function login() {
   const username = document.getElementById('login-username').value.trim()
@@ -159,13 +167,11 @@ async function createPost() {
 
   // Détecter si @claude est mentionné
   if (text.toLowerCase().includes('@claude')) {
-    claudeReply(newPost.id, text, currentUser.name)
+    await claudeReply(newPost.id, text, currentUser.name)
   }
 
   renderPosts()
 }
-
-
 
 // ── Afficher les posts ──
 async function renderPosts() {
@@ -235,7 +241,6 @@ async function renderPosts() {
       '</div>'
     list.appendChild(div)
   })
-  updateMessageBadge()
 }
 
 // ── Liker un post ──
@@ -308,8 +313,8 @@ function showView(view) {
   document.getElementById('view-messages').style.display     = view === 'messages' ? 'block' : 'none'
   document.getElementById('view-conversation').style.display = view === 'conversation' ? 'block' : 'none'
 
-  if (view === 'profile')     renderProfile()
-  if (view === 'messages')    renderConversations()
+  if (view === 'profile')  renderProfile()
+  if (view === 'messages') renderConversations()
 }
 
 // ── Afficher le profil personnel ──
@@ -322,32 +327,26 @@ async function renderProfile() {
 
   const totalLikes = posts.reduce(function(sum, p) { return sum + p.likes.length }, 0)
 
+  const { count: followersCount } = await db
+    .from('follows')
+    .select('*', { count: 'exact' })
+    .eq('following', currentUser.username)
+
+  const { count: followingCount } = await db
+    .from('follows')
+    .select('*', { count: 'exact' })
+    .eq('follower', currentUser.username)
+
   document.getElementById('profile-name').textContent     = currentUser.name
   document.getElementById('profile-username').textContent = '@' + currentUser.username
   document.getElementById('profile-bio').textContent      = currentUser.bio || 'Aucune bio.'
-  document.getElementById('stat-posts').textContent       = posts.length + ' posts'
-  document.getElementById('stat-likes').textContent       = totalLikes + ' likes reçus'
 
-  // Compter ses followers
-const { count: followersCount } = await db
-  .from('follows')
-  .select('*', { count: 'exact' })
-  .eq('following', currentUser.username)
-
-const { count: followingCount } = await db
-  .from('follows')
-  .select('*', { count: 'exact' })
-  .eq('follower', currentUser.username)
-
-document.getElementById('stat-posts').textContent   = posts.length + ' posts'
-document.getElementById('stat-likes').textContent   = totalLikes + ' likes reçus'
-
-// Ajouter followers/following si pas déjà présents
-let statsDiv = document.getElementById('profile-stats')
-statsDiv.innerHTML =
-  '<span><strong>' + posts.length + '</strong> <span style="color:var(--muted)">posts</span></span>' +
-  '<span><strong>' + (followersCount || 0) + '</strong> <span style="color:var(--muted)">followers</span></span>' +
-  '<span><strong>' + (followingCount || 0) + '</strong> <span style="color:var(--muted)">following</span></span>'
+  const statsDiv = document.getElementById('profile-stats')
+  statsDiv.innerHTML =
+    '<span><strong>' + posts.length + '</strong> <span style="color:var(--muted)">posts</span></span>' +
+    '<span><strong>' + (followersCount || 0) + '</strong> <span style="color:var(--muted)">followers</span></span>' +
+    '<span><strong>' + (followingCount || 0) + '</strong> <span style="color:var(--muted)">following</span></span>' +
+    '<span><strong>' + totalLikes + '</strong> <span style="color:var(--muted)">likes reçus</span></span>'
 
   const avatarImg = document.getElementById('profile-avatar-img')
   if (currentUser.avatar_url) {
@@ -409,7 +408,6 @@ async function showUserProfile(username) {
   document.getElementById('user-username').textContent = '@' + user.username
   document.getElementById('user-bio').textContent      = user.bio || 'Aucune bio.'
 
-  // Vérifier si on follow déjà
   const { data: followData } = await db
     .from('follows')
     .select('id')
@@ -419,7 +417,6 @@ async function showUserProfile(username) {
 
   const isFollowing = !!followData
 
-  // Compter les followers
   const { count: followersCount } = await db
     .from('follows')
     .select('*', { count: 'exact' })
@@ -433,19 +430,14 @@ async function showUserProfile(username) {
 
   const totalLikes = posts.reduce(function(sum, p) { return sum + p.likes.length }, 0)
 
-  document.getElementById('user-stat-posts').textContent = posts.length
-  document.getElementById('user-stat-likes').textContent = totalLikes
-
-  // Ajouter les stats followers + bouton follow
   const statsDiv = document.getElementById('user-stat-posts').parentElement
   statsDiv.innerHTML =
     '<span><strong>' + posts.length + '</strong> <span style="color:var(--muted)">posts</span></span>' +
     '<span><strong>' + totalLikes + '</strong> <span style="color:var(--muted)">likes</span></span>' +
     '<span><strong id="followers-count">' + (followersCount || 0) + '</strong> <span style="color:var(--muted)">followers</span></span>'
 
-  // Bouton follow
   const followBtn = document.createElement('button')
-  followBtn.id          = 'follow-btn'
+  followBtn.id = 'follow-btn'
   followBtn.textContent = isFollowing ? '✓ Suivi' : '+ Suivre'
   followBtn.style.cssText = 'width:auto;padding:8px 20px;border-radius:50px;margin-top:12px;font-size:0.9rem;' +
     (isFollowing
@@ -453,6 +445,12 @@ async function showUserProfile(username) {
       : 'background:var(--accent);border:none;color:#fff')
   followBtn.onclick = function() { toggleFollow(username) }
   statsDiv.appendChild(followBtn)
+
+  const msgBtn = document.createElement('button')
+  msgBtn.textContent   = '💬 Message'
+  msgBtn.style.cssText = 'width:auto;padding:8px 20px;border-radius:50px;margin-top:8px;margin-left:8px;font-size:0.9rem;background:transparent;border:1px solid var(--border);color:var(--text)'
+  msgBtn.onclick = function() { openConversation(username, user.name) }
+  statsDiv.appendChild(msgBtn)
 
   const list = document.getElementById('user-posts')
   list.innerHTML = ''
@@ -477,12 +475,6 @@ async function showUserProfile(username) {
       '</div>'
     list.appendChild(div)
   })
-
-  const msgBtn = document.createElement('button')
-msgBtn.textContent  = '💬 Message'
-msgBtn.style.cssText = 'width:auto;padding:8px 20px;border-radius:50px;margin-top:8px;margin-left:8px;font-size:0.9rem;background:transparent;border:1px solid var(--border);color:var(--text)'
-msgBtn.onclick = function() { openConversation(username, user.name) }
-statsDiv.appendChild(msgBtn)
 }
 
 // ── Upload avatar ──
@@ -551,108 +543,76 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 })
 
-// ── Chatbot ──
-let chatHistory = []
-let chatOpen = false
+// ── Follow / Unfollow ──
+async function toggleFollow(username) {
+  const btn = document.getElementById('follow-btn')
 
-function toggleChat() {
-  chatOpen = !chatOpen
-  const window_ = document.getElementById('chat-window')
-  window_.style.display = chatOpen ? 'flex' : 'none'
+  const { data: existing } = await db
+    .from('follows')
+    .select('id')
+    .eq('follower', currentUser.username)
+    .eq('following', username)
+    .single()
 
-  if (chatOpen && chatHistory.length === 0) {
-    addChatMessage('assistant', 'Bonjour ! Je suis ton assistant Nexus 👋 Comment puis-je t\'aider ?')
+  if (existing) {
+    await db.from('follows').delete().eq('id', existing.id)
+    btn.textContent      = '+ Suivre'
+    btn.style.background = 'var(--accent)'
+    btn.style.border     = 'none'
+    btn.style.color      = '#fff'
+  } else {
+    await db.from('follows').insert({
+      follower:  currentUser.username,
+      following: username
+    })
+    btn.textContent      = '✓ Suivi'
+    btn.style.background = 'transparent'
+    btn.style.border     = '1px solid var(--border)'
+    btn.style.color      = 'var(--muted)'
   }
 
-  if (chatOpen) {
-    setTimeout(function() {
-      document.getElementById('chat-input').focus()
-    }, 100)
+  const { count } = await db
+    .from('follows')
+    .select('*', { count: 'exact' })
+    .eq('following', username)
+
+  document.getElementById('followers-count').textContent = count || 0
+}
+
+// ── Améliorer un post avec Claude ──
+async function improvePost() {
+  const textarea = document.getElementById('post-text')
+  const text     = textarea.value.trim()
+
+  if (!text) {
+    alert('Écris quelque chose d\'abord !')
+    return
   }
-}
 
-function addChatMessage(role, text) {
-  const messages = document.getElementById('chat-messages')
-  const div      = document.createElement('div')
-
-  div.style.cssText = role === 'user'
-    ? 'background:var(--accent);color:#fff;padding:10px 14px;border-radius:14px 14px 4px 14px;font-size:0.88rem;align-self:flex-end;max-width:80%'
-    : 'background:var(--surface2, #1a1a26);color:var(--text);padding:10px 14px;border-radius:14px 14px 14px 4px;font-size:0.88rem;align-self:flex-start;max-width:80%;border:1px solid var(--border)'
-
-  div.textContent = text
-  messages.appendChild(div)
-  messages.scrollTop = messages.scrollHeight
-}
-
-async function sendMessage() {
-  const input = document.getElementById('chat-input')
-  const text  = input.value.trim()
-  if (!text) return
-
-  input.value = ''
-  addChatMessage('user', text)
-
-  const loading = document.createElement('div')
-  loading.style.cssText = 'color:var(--muted);font-size:0.85rem;align-self:flex-start;padding:8px 14px'
-  loading.textContent = '...'
-  loading.id = 'chat-loading'
-  document.getElementById('chat-messages').appendChild(loading)
-
-  chatHistory.push({ role: 'user', content: text })
+  const btn = document.querySelector('[onclick="improvePost()"]')
+  btn.textContent = '⏳ ...'
+  btn.disabled    = true
 
   try {
     const response = await fetch('/.netlify/functions/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: text,
-        history: chatHistory.slice(-6)
+        message: 'Améliore ce post pour un réseau social, rends-le plus engageant et accrocheur. Réponds UNIQUEMENT avec le post amélioré, sans explication : ' + text,
+        history: [],
+        context: ''
       })
     })
 
     const data = await response.json()
+    textarea.value = data.reply
 
-    document.getElementById('chat-loading')?.remove()
-    addChatMessage('assistant', data.reply)
-    chatHistory.push({ role: 'assistant', content: data.reply })
-
-  } catch (err) {
-    document.getElementById('chat-loading')?.remove()
-    addChatMessage('assistant', 'Désolé, une erreur s\'est produite 😕')
+  } catch(err) {
+    alert('Erreur lors de l\'amélioration 😕')
   }
-}
 
-// ── Temps réel ──
-db.channel('posts')
-  .on('postgres_changes',
-    { event: '*', schema: 'public', table: 'posts' },
-    function() { renderPosts() }
-  )
-  .subscribe()
-
-db.channel('comments')
-  .on('postgres_changes',
-    { event: '*', schema: 'public', table: 'comments' },
-    function() { renderPosts() }
-  )
-  .subscribe()
-
-// ── Reconnexion automatique ──
-const savedUser = localStorage.getItem('nexus_user')
-if (savedUser) {
-  currentUser = JSON.parse(savedUser)
-  document.getElementById('auth-screen').style.display = 'none'
-  document.getElementById('app').style.display = 'block'
-  renderPosts()
-  updateMessageBadge()
-}
-
-// ── Formater les mentions et hashtags ──
-function formatText(text) {
-  return text
-    .replace(/\n/g, '<br>')
-    .replace(/@(\w+)/g, '<span onclick="showUserProfile(\'$1\')" style="color:var(--accent);cursor:pointer;font-weight:600">@$1</span>')
-    .replace(/#(\w+)/g, '<span onclick="searchHashtag(\'$1\')" style="color:var(--accent2);cursor:pointer;font-weight:600">#$1</span>')
+  btn.textContent = '✨ Améliorer'
+  btn.disabled    = false
 }
 
 // ── Recherche par hashtag ──
@@ -661,7 +621,6 @@ async function searchHashtag(tag) {
 
   const list = document.getElementById('posts-list')
 
-  // Header avec retour — toujours visible
   list.innerHTML =
     '<div style="padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--bg);z-index:5">' +
       '<button onclick="renderPosts()" style="width:auto;padding:8px 16px;border-radius:50px;background:transparent;border:1px solid var(--border);color:var(--text);font-size:0.85rem;margin:0">← Retour</button>' +
@@ -711,82 +670,89 @@ async function searchHashtag(tag) {
   })
 }
 
+// ── Chatbot ──
+let chatHistory = []
+let chatOpen    = false
 
+function toggleChat() {
+  chatOpen = !chatOpen
+  const window_ = document.getElementById('chat-window')
+  window_.style.display = chatOpen ? 'flex' : 'none'
 
-// ── Follow / Unfollow ──
-async function toggleFollow(username) {
-  const btn = document.getElementById('follow-btn')
-
-  const { data: existing } = await db
-    .from('follows')
-    .select('id')
-    .eq('follower', currentUser.username)
-    .eq('following', username)
-    .single()
-
-  if (existing) {
-    // Unfollow
-    await db.from('follows').delete().eq('id', existing.id)
-    btn.textContent = '+ Suivre'
-    btn.style.background = 'var(--accent)'
-    btn.style.border = 'none'
-    btn.style.color = '#fff'
-  } else {
-    // Follow
-    await db.from('follows').insert({
-      follower:  currentUser.username,
-      following: username
-    })
-    btn.textContent = '✓ Suivi'
-    btn.style.background = 'transparent'
-    btn.style.border = '1px solid var(--border)'
-    btn.style.color = 'var(--muted)'
+  if (chatOpen && chatHistory.length === 0) {
+    addChatMessage('assistant', 'Bonjour ! Je suis ton assistant Nexus 👋 Comment puis-je t\'aider ?')
   }
 
-  // Mettre à jour le compteur
-  const { count } = await db
-    .from('follows')
-    .select('*', { count: 'exact' })
-    .eq('following', username)
-
-  document.getElementById('followers-count').textContent = count || 0
+  if (chatOpen) {
+    setTimeout(function() {
+      document.getElementById('chat-input').focus()
+    }, 100)
+  }
 }
 
+function addChatMessage(role, text) {
+  const messages = document.getElementById('chat-messages')
+  const div      = document.createElement('div')
 
-// ── Améliorer un post avec Claude ──
-async function improvePost() {
-  const textarea = document.getElementById('post-text')
-  const text     = textarea.value.trim()
+  div.style.cssText = role === 'user'
+    ? 'background:var(--accent);color:#fff;padding:10px 14px;border-radius:14px 14px 4px 14px;font-size:0.88rem;align-self:flex-end;max-width:80%'
+    : 'background:var(--surface2, #1a1a26);color:var(--text);padding:10px 14px;border-radius:14px 14px 14px 4px;font-size:0.88rem;align-self:flex-start;max-width:80%;border:1px solid var(--border)'
 
-  if (!text) {
-    alert('Écris quelque chose d\'abord !')
-    return
-  }
+  div.textContent = text
+  messages.appendChild(div)
+  messages.scrollTop = messages.scrollHeight
+}
 
-  const btn = document.querySelector('[onclick="improvePost()"]')
-  btn.textContent = '⏳ ...'
-  btn.disabled    = true
+async function sendMessage() {
+  const input = document.getElementById('chat-input')
+  const text  = input.value.trim()
+  if (!text) return
+
+  input.value = ''
+  addChatMessage('user', text)
+
+  const loading = document.createElement('div')
+  loading.style.cssText = 'color:var(--muted);font-size:0.85rem;align-self:flex-start;padding:8px 14px'
+  loading.textContent   = '...'
+  loading.id            = 'chat-loading'
+  document.getElementById('chat-messages').appendChild(loading)
+
+  chatHistory.push({ role: 'user', content: text })
+
+  // Récupérer les derniers posts pour le contexte
+  const { data: posts } = await db
+    .from('posts')
+    .select('author_name, text, likes, created_at')
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  const postsContext = posts
+    ? posts.map(function(p) {
+        return p.author_name + ' : ' + p.text + ' (' + p.likes.length + ' likes, ' + formatDate(p.created_at) + ')'
+      }).join('\n')
+    : 'Aucun post'
 
   try {
     const response = await fetch('/.netlify/functions/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: 'Améliore ce post pour un réseau social, rends-le plus engageant et accrocheur. Réponds UNIQUEMENT avec le post amélioré, sans explication : ' + text,
-        history: [],
-        context: ''
+        message: text,
+        history: chatHistory.slice(-6),
+        context: postsContext
       })
     })
 
     const data = await response.json()
-    textarea.value = data.reply
 
-  } catch(err) {
-    alert('Erreur lors de l\'amélioration 😕')
+    document.getElementById('chat-loading')?.remove()
+    addChatMessage('assistant', data.reply)
+    chatHistory.push({ role: 'assistant', content: data.reply })
+
+  } catch (err) {
+    document.getElementById('chat-loading')?.remove()
+    addChatMessage('assistant', 'Désolé, une erreur s\'est produite 😕')
   }
-
-  btn.textContent = '✨ Améliorer'
-  btn.disabled    = false
 }
 
 // ── Messages privés ──
@@ -807,18 +773,17 @@ async function renderConversations() {
     return
   }
 
-  // Grouper par conversation
   const conversations = {}
   messages.forEach(function(msg) {
-    const other = msg.sender === currentUser.username ? msg.recipient : msg.sender
+    const other     = msg.sender === currentUser.username ? msg.recipient : msg.sender
     const otherName = msg.sender === currentUser.username ? msg.recipient : msg.sender_name
     if (!conversations[other]) {
       conversations[other] = {
-        username: other,
-        name: otherName,
+        username:    other,
+        name:        otherName,
         lastMessage: msg.text,
-        lastDate: msg.created_at,
-        unread: 0
+        lastDate:    msg.created_at,
+        unread:      0
       }
     }
     if (msg.recipient === currentUser.username && !msg.read) {
@@ -855,12 +820,12 @@ async function openConversation(username, name) {
   document.getElementById('conversation-username').textContent = name + ' (@' + username + ')'
   showView('conversation')
 
-  // Marquer comme lu
   await db.from('messages')
     .update({ read: true })
     .eq('sender', username)
     .eq('recipient', currentUser.username)
-updateMessageBadge()
+
+  updateMessageBadge()
   loadConversationMessages()
 }
 
@@ -889,8 +854,8 @@ async function loadConversationMessages() {
       ? 'background:var(--accent);color:#fff;padding:10px 14px;border-radius:14px 14px 4px 14px;font-size:0.9rem;align-self:flex-end;max-width:75%'
       : 'background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:14px 14px 14px 4px;font-size:0.9rem;align-self:flex-start;max-width:75%'
     div.innerHTML =
-  '<div>' + msg.text + '</div>' +
-  '<div style="font-size:0.75rem;opacity:0.7;margin-top:4px;text-align:' + (isMe ? 'right' : 'left') + '">' + formatDate(msg.created_at) + '</div>'
+      '<div>' + msg.text + '</div>' +
+      '<div style="font-size:0.75rem;opacity:0.7;margin-top:4px;text-align:' + (isMe ? 'right' : 'left') + '">' + formatDate(msg.created_at) + '</div>'
     list.appendChild(div)
   })
 
@@ -953,26 +918,6 @@ async function searchUserForMessage() {
   })
 }
 
-// ── Temps réel messages ──
-db.channel('messages')
-  .on('postgres_changes',
-    { event: 'INSERT', schema: 'public', table: 'messages' },
-    function(payload) {
-      const msg = payload.new
-
-      // Si on est dans la conversation concernée → recharger les messages
-      if (msg.recipient === currentUser.username || msg.sender === currentUser.username) {
-        if (currentConversation === msg.sender || currentConversation === msg.recipient) {
-          loadConversationMessages()
-        }
-      }
-
-      // Mettre à jour le badge
-      updateMessageBadge()
-    }
-  )
-  .subscribe()
-
 // ── Badge messages non lus ──
 async function updateMessageBadge() {
   const { count } = await db
@@ -1006,7 +951,6 @@ async function claudeReply(postId, postText, postAuthor) {
 
     const data = await response.json()
 
-    // Poster le commentaire en tant que @claude
     await db.from('comments').insert({
       post_id:     postId,
       author:      'claude',
@@ -1014,9 +958,47 @@ async function claudeReply(postId, postText, postAuthor) {
       text:        data.reply
     })
 
-    renderPosts()
-
   } catch(err) {
     console.error('Erreur Claude bot:', err)
   }
+}
+
+// ── Temps réel ──
+db.channel('posts')
+  .on('postgres_changes',
+    { event: '*', schema: 'public', table: 'posts' },
+    function() { renderPosts() }
+  )
+  .subscribe()
+
+db.channel('comments')
+  .on('postgres_changes',
+    { event: '*', schema: 'public', table: 'comments' },
+    function() { renderPosts() }
+  )
+  .subscribe()
+
+db.channel('messages')
+  .on('postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'messages' },
+    function(payload) {
+      const msg = payload.new
+      if (msg.recipient === currentUser.username || msg.sender === currentUser.username) {
+        if (currentConversation === msg.sender || currentConversation === msg.recipient) {
+          loadConversationMessages()
+        }
+      }
+      updateMessageBadge()
+    }
+  )
+  .subscribe()
+
+// ── Reconnexion automatique ──
+const savedUser = localStorage.getItem('nexus_user')
+if (savedUser) {
+  currentUser = JSON.parse(savedUser)
+  document.getElementById('auth-screen').style.display = 'none'
+  document.getElementById('app').style.display         = 'block'
+  renderPosts()
+  updateMessageBadge()
 }
