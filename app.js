@@ -144,15 +144,16 @@ async function createPost() {
     image_url = generatedImageUrl
   }
 
-  const { error } = await db
-    .from('posts')
-    .insert({
-      author:      currentUser.username,
-      author_name: currentUser.name,
-      text:        text,
-      image_url:   image_url,
-      avatar_url:  currentUser.avatar_url || ''
-    })
+const { error } = await db
+  .from('posts')
+  .insert({
+    author:       currentUser.username,
+    author_name:  currentUser.name,
+    text:         text,
+    image_url:    image_url,
+    image_prompt: image_url === generatedImageUrl ? document.getElementById('image-prompt').value.trim() : '',
+    avatar_url:   currentUser.avatar_url || ''
+  })
 
   if (error) {
     console.error(error)
@@ -312,6 +313,12 @@ async function addComment(id) {
   })
 
   input.value = ''
+
+  // Claude répond si mentionné dans le commentaire
+  if (text.toLowerCase().includes('@claude')) {
+    await claudeCommentReply(id, text, currentUser.name)
+  }
+
   renderPosts()
 }
 
@@ -1088,4 +1095,48 @@ if (savedUser) {
   document.getElementById('app').style.display         = 'block'
   renderPosts()
   updateMessageBadge()
+}
+
+
+
+// ── Claude répond aux commentaires ──
+async function claudeCommentReply(postId, commentText, authorName) {
+  try {
+    // Récupérer le contexte du post et des commentaires précédents
+    const { data: comments } = await db
+      .from('comments')
+      .select('*')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true })
+
+    const context = comments
+      ? comments.map(function(c) {
+          return c.author_name + ' : ' + c.text
+        }).join('\n')
+      : ''
+
+    const response = await fetch('/.netlify/functions/claude-bot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        postId:     postId,
+        postText:   'Contexte de la discussion :\n' + context + '\n\nDernier commentaire de ' + authorName + ' : ' + commentText,
+        postAuthor: authorName
+      })
+    })
+
+    const data = await response.json()
+
+    await db.from('comments').insert({
+      post_id:     postId,
+      author:      'claude',
+      author_name: 'Claude AI',
+      text:        data.reply
+    })
+
+    renderPosts()
+
+  } catch(err) {
+    console.error('Erreur Claude commentaire:', err)
+  }
 }
