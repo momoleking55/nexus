@@ -147,6 +147,12 @@ async function createPost() {
   document.getElementById('post-text').value  = ''
   document.getElementById('post-image').value = ''
   document.getElementById('image-preview').innerHTML = ''
+
+  // Détecter si @claude est mentionné
+  if (text.toLowerCase().includes('@claude')) {
+    claudeReply(newPost.id, text, currentUser.name)
+  }
+
   renderPosts()
 }
 
@@ -971,5 +977,35 @@ async function updateMessageBadge() {
     btn.innerHTML = '💬 <span style="background:var(--accent2);color:#fff;border-radius:50%;padding:1px 6px;font-size:0.75rem;font-weight:700">' + count + '</span>'
   } else {
     btn.innerHTML = '💬'
+  }
+}
+
+// ── Claude répond automatiquement ──
+async function claudeReply(postId, postText, postAuthor) {
+  try {
+    const response = await fetch('/.netlify/functions/claude-bot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        postId:     postId,
+        postText:   postText,
+        postAuthor: postAuthor
+      })
+    })
+
+    const data = await response.json()
+
+    // Poster le commentaire en tant que @claude
+    await db.from('comments').insert({
+      post_id:     postId,
+      author:      'claude',
+      author_name: 'Claude AI',
+      text:        data.reply
+    })
+
+    renderPosts()
+
+  } catch(err) {
+    console.error('Erreur Claude bot:', err)
   }
 }
