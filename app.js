@@ -23,6 +23,7 @@ async function login() {
   }
 
   currentUser = data
+  localStorage.setItem('nexus_user', JSON.stringify(data))
   showError('')
   document.getElementById('auth-screen').style.display = 'none'
   document.getElementById('app').style.display = 'block'
@@ -61,6 +62,7 @@ async function register() {
 // ── Déconnexion ──
 function logout() {
   currentUser = null
+  localStorage.removeItem('nexus_user')
   document.getElementById('app').style.display = 'none'
   document.getElementById('auth-screen').style.display = 'block'
 }
@@ -464,3 +466,13 @@ db.channel('comments')
     function() { renderPosts() }
   )
   .subscribe()
+
+
+  // ── Reconnexion automatique ──
+const savedUser = localStorage.getItem('nexus_user')
+if (savedUser) {
+  currentUser = JSON.parse(savedUser)
+  document.getElementById('auth-screen').style.display = 'none'
+  document.getElementById('app').style.display = 'block'
+  renderPosts()
+}
