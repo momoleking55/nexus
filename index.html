@@ -197,6 +197,26 @@
     </div>
   </div>
 
+<!-- Navigation mobile -->
+<div id="mobile-nav">
+  <button onclick="showView('feed')" id="mob-feed">
+    🏠
+    <span>Accueil</span>
+  </button>
+  <button onclick="showView('messages')" id="mob-messages">
+    💬
+    <span>Messages</span>
+  </button>
+  <button onclick="showView('profile')" id="mob-profile">
+    👤
+    <span>Profil</span>
+  </button>
+  <button onclick="logout()" style="color:var(--muted)">
+    🚪
+    <span>Quitter</span>
+  </button>
+</div>
+
   <!-- Scripts -->
   <script src="js/utils.js"></script>
   <script src="js/auth.js"></script>
