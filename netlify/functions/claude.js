@@ -1,4 +1,12 @@
 exports.handler = async function(event) {
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, body: 'Method Not Allowed' }
+  }
+
+  if (!event.body) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'No body' }) }
+  }
+
   const { message, history } = JSON.parse(event.body)
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -21,10 +29,16 @@ exports.handler = async function(event) {
 
   const data = await response.json()
 
+  if (!data.content || !data.content[0]) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Erreur API', details: data })
+    }
+  }
+
   return {
     statusCode: 200,
-    body: JSON.stringify({
-      reply: data.content[0].text
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reply: data.content[0].text })
   }
 }
