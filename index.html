@@ -98,6 +98,7 @@
       <h1>Nexus</h1>
       <div style="display:flex;gap:8px">
         <button onclick="showView('feed')">🏠</button>
+        <button onclick="showView('messages')">💬</button>
         <button onclick="showView('profile')">👤</button>
         <button onclick="logout()">Déconnexion</button>
       </div>
@@ -167,6 +168,29 @@
       </div>
       <div id="user-posts"></div>
     </div>
+
+    <!-- Vue messages -->
+<div id="view-messages" style="display:none">
+  <div style="padding:20px 24px;border-bottom:1px solid var(--border)">
+    <h2 style="font-family:sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:16px">💬 Messages</h2>
+    <input type="text" id="search-user" placeholder="Envoyer un message à @pseudo..." oninput="searchUserForMessage()">
+    <div id="search-user-results"></div>
+  </div>
+  <div id="conversations-list"></div>
+</div>
+
+<!-- Vue conversation -->
+<div id="view-conversation" style="display:none">
+  <div style="padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--bg)">
+    <button onclick="showView('messages')" style="width:auto;padding:8px 14px;border-radius:50px;background:transparent;border:1px solid var(--border);color:var(--text);font-size:0.85rem;margin:0">←</button>
+    <strong id="conversation-username"></strong>
+  </div>
+  <div id="conversation-messages" style="padding:16px 24px;display:flex;flex-direction:column;gap:10px;min-height:300px"></div>
+  <div style="padding:12px 24px;border-top:1px solid var(--border);display:flex;gap:8px;position:sticky;bottom:0;background:var(--bg)">
+    <input type="text" id="message-input" placeholder="Ton message..." style="flex:1;margin:0" onkeydown="if(event.key==='Enter') sendPrivateMessage()">
+    <button onclick="sendPrivateMessage()" style="width:auto;padding:10px 16px;border-radius:10px;margin:0">→</button>
+  </div>
+</div>
 
   </div>
 
