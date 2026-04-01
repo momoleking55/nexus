@@ -37,9 +37,11 @@ exports.handler = async function(event) {
     }
   }
 
-  return {
-    statusCode: 200,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reply: data.content[0].text })
+if (!data.content || !data.content[0]) {
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reply: 'Erreur: ' + JSON.stringify(data) })
+    }
   }
 }
