@@ -722,3 +722,40 @@ async function toggleFollow(username) {
 
   document.getElementById('followers-count').textContent = count || 0
 }
+
+
+// ── Améliorer un post avec Claude ──
+async function improvePost() {
+  const textarea = document.getElementById('post-text')
+  const text     = textarea.value.trim()
+
+  if (!text) {
+    alert('Écris quelque chose d\'abord !')
+    return
+  }
+
+  const btn = document.querySelector('[onclick="improvePost()"]')
+  btn.textContent = '⏳ ...'
+  btn.disabled    = true
+
+  try {
+    const response = await fetch('/.netlify/functions/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: 'Améliore ce post pour un réseau social, rends-le plus engageant et accrocheur. Réponds UNIQUEMENT avec le post amélioré, sans explication : ' + text,
+        history: [],
+        context: ''
+      })
+    })
+
+    const data = await response.json()
+    textarea.value = data.reply
+
+  } catch(err) {
+    alert('Erreur lors de l\'amélioration 😕')
+  }
+
+  btn.textContent = '✨ Améliorer'
+  btn.disabled    = false
+}
