@@ -144,6 +144,15 @@ async function createPost() {
     return
   }
 
+  // Récupérer le post qu'on vient de créer
+  const { data: newPost } = await db
+    .from('posts')
+    .select('*')
+    .eq('author', currentUser.username)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
   document.getElementById('post-text').value  = ''
   document.getElementById('post-image').value = ''
   document.getElementById('image-preview').innerHTML = ''
@@ -155,6 +164,8 @@ async function createPost() {
 
   renderPosts()
 }
+
+
 
 // ── Afficher les posts ──
 async function renderPosts() {
