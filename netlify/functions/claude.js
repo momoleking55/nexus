@@ -28,6 +28,7 @@ exports.handler = async function(event) {
   })
 
   const data = await response.json()
+  console.log('API response:', JSON.stringify(data))  // ← ajoute ça
 
   if (!data.content || !data.content[0]) {
     return {
