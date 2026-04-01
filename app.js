@@ -1,5 +1,6 @@
 // ── Variables ──
 let currentUser = null
+let generatedImageUrl = null
 
 // ── Formater la date ──
 function formatDate(dateStr) {
@@ -112,10 +113,11 @@ async function createPost() {
   const text = document.getElementById('post-text').value.trim()
   const file = document.getElementById('post-image').files[0]
 
-  if (!text && !file) return
+  if (!text && !file && !generatedImageUrl) return
 
   let image_url = ''
 
+  // Image uploadée manuellement
   if (file) {
     const fileName = currentUser.username + '_' + Date.now()
 
@@ -137,6 +139,11 @@ async function createPost() {
     image_url = data.publicUrl
   }
 
+  // Image générée par IA
+  if (!image_url && generatedImageUrl) {
+    image_url = generatedImageUrl
+  }
+
   const { error } = await db
     .from('posts')
     .insert({
@@ -152,7 +159,7 @@ async function createPost() {
     return
   }
 
-  // Récupérer le post qu'on vient de créer
+  // Récupérer le post créé
   const { data: newPost } = await db
     .from('posts')
     .select('*')
@@ -161,32 +168,18 @@ async function createPost() {
     .limit(1)
     .single()
 
+  // Reset
   document.getElementById('post-text').value  = ''
   document.getElementById('post-image').value = ''
-  document.getElementById('image-preview').innerHTML = ''
+  document.getElementById('image-preview').innerHTML    = ''
+  document.getElementById('generated-preview').innerHTML = ''
+  document.getElementById('image-prompt').value = ''
+  generatedImageUrl = null
 
-  // Détecter si @claude est mentionné
+  // Claude répond si mentionné
   if (text.toLowerCase().includes('@claude')) {
     await claudeReply(newPost.id, text, currentUser.name)
   }
-
-  // Utiliser l'image générée si pas de fichier uploadé
-if (!image_url && generatedImageUrl) {
-  image_url = generatedImageUrl
-  generatedImageUrl = null
-  document.getElementById('generated-preview').innerHTML = ''
-  document.getElementById('image-prompt').value = ''
-}
-
-const { error } = await db
-  .from('posts')
-  .insert({
-    author:      currentUser.username,
-    author_name: currentUser.name,
-    text:        text,
-    image_url:   image_url,
-    avatar_url:  currentUser.avatar_url || ''
-  })
 
   renderPosts()
 }
@@ -688,6 +681,48 @@ async function searchHashtag(tag) {
   })
 }
 
+// ── Générer une image avec IA ──
+async function generateImage() {
+  const prompt = document.getElementById('image-prompt').value.trim()
+  if (!prompt) {
+    alert('Décris d\'abord l\'image que tu veux générer !')
+    return
+  }
+
+  const btn     = document.getElementById('gen-btn')
+  const preview = document.getElementById('generated-preview')
+
+  btn.textContent   = '⏳ Génération...'
+  btn.disabled      = true
+  preview.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Génération en cours... (~10 secondes)</p>'
+
+  try {
+    const response = await fetch('/.netlify/functions/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    })
+
+    const data = await response.json()
+
+    if (data.error) {
+      preview.innerHTML = '<p style="color:var(--accent2);font-size:0.85rem">Erreur : ' + data.error + '</p>'
+      return
+    }
+
+    generatedImageUrl = data.imageUrl
+    preview.innerHTML =
+      '<img src="' + data.imageUrl + '" style="max-width:100%;border-radius:12px;max-height:300px;object-fit:cover">' +
+      '<p style="color:var(--muted);font-size:0.8rem;margin-top:6px">✅ Image ajoutée au post</p>'
+
+  } catch(err) {
+    preview.innerHTML = '<p style="color:var(--accent2);font-size:0.85rem">Erreur de génération 😕</p>'
+  }
+
+  btn.textContent = '🎨 Générer'
+  btn.disabled    = false
+}
+
 // ── Chatbot ──
 let chatHistory = []
 let chatOpen    = false
@@ -737,7 +772,6 @@ async function sendMessage() {
 
   chatHistory.push({ role: 'user', content: text })
 
-  // Récupérer les derniers posts pour le contexte
   const { data: posts } = await db
     .from('posts')
     .select('author_name, text, likes, created_at')
@@ -896,7 +930,6 @@ async function sendPrivateMessage() {
 
   loadConversationMessages()
 
-  // Si on écrit à @claude, il répond automatiquement
   if (currentConversation === 'claude') {
     claudePrivateReply(text)
   }
@@ -988,7 +1021,7 @@ async function updateMessageBadge() {
   }
 }
 
-// ── Claude répond automatiquement ──
+// ── Claude répond automatiquement aux mentions ──
 async function claudeReply(postId, postText, postAuthor) {
   try {
     const response = await fetch('/.netlify/functions/claude-bot', {
@@ -1002,14 +1035,16 @@ async function claudeReply(postId, postText, postAuthor) {
     })
 
     const data = await response.json()
-    
+
     await db.from('comments').insert({
       post_id:     postId,
       author:      'claude',
       author_name: 'Claude AI',
       text:        data.reply
     })
-renderPosts() 
+
+    renderPosts()
+
   } catch(err) {
     console.error('Erreur Claude bot:', err)
   }
@@ -1053,48 +1088,4 @@ if (savedUser) {
   document.getElementById('app').style.display         = 'block'
   renderPosts()
   updateMessageBadge()
-}
-
-// ── Générer une image avec IA ──
-let generatedImageUrl = null
-
-async function generateImage() {
-  const prompt = document.getElementById('image-prompt').value.trim()
-  if (!prompt) {
-    alert('Décris d\'abord l\'image que tu veux générer !')
-    return
-  }
-
-  const btn     = document.getElementById('gen-btn')
-  const preview = document.getElementById('generated-preview')
-
-  btn.textContent = '⏳ Génération...'
-  btn.disabled    = true
-  preview.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Génération en cours... (~10 secondes)</p>'
-
-  try {
-    const response = await fetch('/.netlify/functions/generate-image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
-    })
-
-    const data = await response.json()
-
-    if (data.error) {
-      preview.innerHTML = '<p style="color:var(--accent2);font-size:0.85rem">Erreur : ' + data.error + '</p>'
-      return
-    }
-
-    generatedImageUrl = data.imageUrl
-    preview.innerHTML =
-      '<img src="' + data.imageUrl + '" style="max-width:100%;border-radius:12px;max-height:300px;object-fit:cover">' +
-      '<p style="color:var(--muted);font-size:0.8rem;margin-top:6px">✅ Image ajoutée au post</p>'
-
-  } catch(err) {
-    preview.innerHTML = '<p style="color:var(--accent2);font-size:0.85rem">Erreur de génération 😕</p>'
-  }
-
-  btn.textContent = '🎨 Générer'
-  btn.disabled    = false
 }
