@@ -877,6 +877,40 @@ async function sendPrivateMessage() {
   })
 
   loadConversationMessages()
+
+  // Si on écrit à @claude, il répond automatiquement
+  if (currentConversation === 'claude') {
+    claudePrivateReply(text)
+  }
+}
+
+// ── Claude répond en message privé ──
+async function claudePrivateReply(userMessage) {
+  try {
+    const response = await fetch('/.netlify/functions/claude-bot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        postId:     null,
+        postText:   userMessage,
+        postAuthor: currentUser.name
+      })
+    })
+
+    const data = await response.json()
+
+    await db.from('messages').insert({
+      sender:      'claude',
+      sender_name: 'Claude AI',
+      recipient:   currentUser.username,
+      text:        data.reply
+    })
+
+    loadConversationMessages()
+
+  } catch(err) {
+    console.error('Erreur Claude message privé:', err)
+  }
 }
 
 async function searchUserForMessage() {
