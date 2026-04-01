@@ -1,47 +1,41 @@
-exports.handler = async function(event) {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' }
-  }
+exports.handler = async function(event, context) {
+  try {
+    const body = JSON.parse(event.body)
+    const message = body.message
+    const history = body.history || []
 
-  if (!event.body) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'No body' }) }
-  }
-
-  const { message, history } = JSON.parse(event.body)
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_KEY,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      system: 'Tu es un assistant sympa intégré dans Nexus, un réseau social. Réponds en français, de façon courte et conviviale.',
-      messages: [
-        ...history,
-        { role: 'user', content: message }
-      ]
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 500,
+        system: 'Tu es un assistant sympa sur Nexus. Réponds en français, de façon courte.',
+        messages: [
+          ...history,
+          { role: 'user', content: message }
+        ]
+      })
     })
-  })
 
-  const data = await response.json()
-  console.log('API response:', JSON.stringify(data))  // ← ajoute ça
+    const text = await response.text()
+    const data = JSON.parse(text)
 
-  if (!data.content || !data.content[0]) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Erreur API', details: data })
-    }
-  }
-
-if (!data.content || !data.content[0]) {
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reply: 'Erreur: ' + JSON.stringify(data) })
+      body: JSON.stringify({ reply: data.content[0].text })
+    }
+
+  } catch(err) {
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reply: 'Erreur: ' + err.message })
     }
   }
 }
