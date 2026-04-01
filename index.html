@@ -114,12 +114,19 @@
     <input type="file" id="post-image" accept="image/*" style="display:none">
     <div id="image-preview" style="margin-top:8px"></div>
   </div>
+  <!-- Générateur d'image IA -->
+  <div id="image-gen-section" style="margin-bottom:10px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" id="image-prompt" placeholder="🎨 Décris une image à générer..." style="flex:1;margin:0">
+      <button onclick="generateImage()" id="gen-btn" style="width:auto;padding:10px 16px;border-radius:10px;margin:0;background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:0.85rem">Générer</button>
+    </div>
+    <div id="generated-preview" style="margin-top:8px"></div>
+  </div>
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button onclick="improvePost()" style="width:auto;padding:8px 16px;border-radius:50px;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:0.85rem;margin:0">✨ Améliorer</button>
     <button onclick="createPost()" style="width:auto;padding:8px 24px;border-radius:50px;font-weight:700;margin:0;background:linear-gradient(135deg,var(--accent),var(--accent2))">Publier</button>
   </div>
 </div>
-
     <div id="posts-list"></div>
 
     <!-- Vue profil personnel -->
