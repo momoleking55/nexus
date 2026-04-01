@@ -950,14 +950,14 @@ async function claudeReply(postId, postText, postAuthor) {
     })
 
     const data = await response.json()
-
+    console.log('Réponse claude-bot:', data)
     await db.from('comments').insert({
       post_id:     postId,
       author:      'claude',
       author_name: 'Claude AI',
       text:        data.reply
     })
-
+console.log('Commentaire inséré !')
   } catch(err) {
     console.error('Erreur Claude bot:', err)
   }
