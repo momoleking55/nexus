@@ -508,3 +508,128 @@ button:hover {
 .post-card img[style*="border-radius:50%"]:hover {
   transform: scale(1.1);
 }
+
+
+/* ══════════════════════════
+   RESPONSIVE MOBILE
+══════════════════════════ */
+
+/* Navigation mobile en bas */
+#mobile-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+
+  /* Cache le header desktop */
+  #app-header {
+    display: none;
+  }
+
+  /* Barre de nav en bas */
+  #mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    padding: 8px 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  #mobile-nav button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.6rem;
+    padding: 8px;
+    margin: 0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: auto;
+  }
+
+  #mobile-nav button span {
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  #mobile-nav button.active {
+    color: var(--accent);
+  }
+
+  #mobile-nav button.active span {
+    color: var(--accent);
+  }
+
+  /* Padding en bas pour ne pas cacher le contenu */
+  #app {
+    padding-bottom: 80px;
+  }
+
+  /* App prend toute la largeur */
+  #app {
+    max-width: 100%;
+    border: none;
+  }
+
+  /* Boutons plus grands et tactiles */
+  button {
+    min-height: 44px;
+  }
+
+  input, textarea {
+    font-size: 16px !important; /* évite le zoom auto sur iOS */
+    min-height: 44px;
+  }
+
+  /* Compose plus compact */
+  #compose {
+    padding: 12px 16px;
+  }
+
+  /* Posts plus aérés */
+  .post-card {
+    padding: 14px 16px;
+  }
+
+  /* Actions post plus grandes */
+  .post-actions button {
+    padding: 10px 18px;
+    font-size: 0.9rem;
+  }
+
+  /* Chatbot adapté mobile */
+  #chat-window {
+    width: calc(100vw - 32px) !important;
+    right: 16px !important;
+    bottom: 90px !important;
+  }
+
+  #chat-toggle {
+    bottom: 80px !important;
+  }
+
+  /* Auth box mobile */
+  .auth-box {
+    padding: 32px 24px;
+    border-radius: 16px;
+  }
+
+  /* Header profil */
+  #profile-info {
+    padding: 16px;
+  }
+
+  /* Messages */
+  #conversation-messages {
+    padding: 12px 16px;
+  }
+}
