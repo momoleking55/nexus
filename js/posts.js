@@ -227,4 +227,17 @@ function showView(view) {
 
   if (view === 'profile')  renderProfile()
   if (view === 'messages') renderConversations()
+
+     // Mettre à jour la nav mobile
+  const navBtns = ['mob-feed', 'mob-messages', 'mob-profile']
+  navBtns.forEach(function(id) {
+    const btn = document.getElementById(id)
+    if (btn) btn.classList.remove('active')
+  })
+  const map = { feed: 'mob-feed', messages: 'mob-messages', profile: 'mob-profile' }
+  if (map[view]) {
+    const activeBtn = document.getElementById(map[view])
+    if (activeBtn) activeBtn.classList.add('active')
+  } 
 }
+
