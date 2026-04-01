@@ -170,6 +170,24 @@ async function createPost() {
     await claudeReply(newPost.id, text, currentUser.name)
   }
 
+  // Utiliser l'image générée si pas de fichier uploadé
+if (!image_url && generatedImageUrl) {
+  image_url = generatedImageUrl
+  generatedImageUrl = null
+  document.getElementById('generated-preview').innerHTML = ''
+  document.getElementById('image-prompt').value = ''
+}
+
+const { error } = await db
+  .from('posts')
+  .insert({
+    author:      currentUser.username,
+    author_name: currentUser.name,
+    text:        text,
+    image_url:   image_url,
+    avatar_url:  currentUser.avatar_url || ''
+  })
+
   renderPosts()
 }
 
@@ -1035,4 +1053,48 @@ if (savedUser) {
   document.getElementById('app').style.display         = 'block'
   renderPosts()
   updateMessageBadge()
+}
+
+// ── Générer une image avec IA ──
+let generatedImageUrl = null
+
+async function generateImage() {
+  const prompt = document.getElementById('image-prompt').value.trim()
+  if (!prompt) {
+    alert('Décris d\'abord l\'image que tu veux générer !')
+    return
+  }
+
+  const btn     = document.getElementById('gen-btn')
+  const preview = document.getElementById('generated-preview')
+
+  btn.textContent = '⏳ Génération...'
+  btn.disabled    = true
+  preview.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Génération en cours... (~10 secondes)</p>'
+
+  try {
+    const response = await fetch('/.netlify/functions/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    })
+
+    const data = await response.json()
+
+    if (data.error) {
+      preview.innerHTML = '<p style="color:var(--accent2);font-size:0.85rem">Erreur : ' + data.error + '</p>'
+      return
+    }
+
+    generatedImageUrl = data.imageUrl
+    preview.innerHTML =
+      '<img src="' + data.imageUrl + '" style="max-width:100%;border-radius:12px;max-height:300px;object-fit:cover">' +
+      '<p style="color:var(--muted);font-size:0.8rem;margin-top:6px">✅ Image ajoutée au post</p>'
+
+  } catch(err) {
+    preview.innerHTML = '<p style="color:var(--accent2);font-size:0.85rem">Erreur de génération 😕</p>'
+  }
+
+  btn.textContent = '🎨 Générer'
+  btn.disabled    = false
 }
