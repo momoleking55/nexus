@@ -116,8 +116,9 @@ async function renderPosts() {
         '</div>' +
       '</div>' +
       (post.author === currentUser.username
-        ? '<button onclick="deletePost(\'' + post.id + '\')" class="btn-delete">🗑</button>'
-        : '') +
+  ? '<button onclick="deletePost(\'' + post.id + '\')" class="btn-delete">🗑</button>' +
+    '<button onclick="editPost(\'' + post.id + '\')" class="btn-delete" style="margin-right:4px">✏️</button>'
+  : '') +
       '<div class="post-text">' + formatText(post.text) + '</div>' +
       (post.image_url
         ? '<img src="' + post.image_url + '" style="width:100%;border-radius:12px;margin-bottom:6px">' +
@@ -241,3 +242,25 @@ function showView(view) {
   } 
 }
 
+// ── Modifier un post ──
+async function editPost(id) {
+  const { data: post } = await db
+    .from('posts')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (!post) return
+
+  const newText = prompt('Modifier ton post :', post.text)
+
+  if (newText === null) return  // annulé
+  if (!newText.trim()) return   // vide
+
+  await db
+    .from('posts')
+    .update({ text: newText.trim() })
+    .eq('id', id)
+
+  renderPosts()
+}
