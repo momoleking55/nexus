@@ -13,6 +13,7 @@ if (savedUser) {
   document.getElementById('app').style.display         = 'block'
   renderPosts()
   updateMessageBadge()
+  loadWeather()
 }
 
 // ── Temps réel ──
