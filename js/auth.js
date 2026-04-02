@@ -26,6 +26,7 @@ async function login() {
   document.getElementById('app').style.display = 'block'
   renderPosts()
   updateMessageBadge()
+  loadWeather()
 }
 
 // ── Inscription ──
