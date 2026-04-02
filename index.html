@@ -42,15 +42,16 @@
   <!-- ÉCRAN 2 : App -->
   <div id="app" style="display:none">
 
-    <div id="app-header">
-      <h1>Nexus</h1>
-      <div style="display:flex;gap:8px">
-        <button onclick="showView('feed')">🏠</button>
-        <button onclick="showView('messages')">💬</button>
-        <button onclick="showView('profile')">👤</button>
-        <button onclick="logout()">Déconnexion</button>
-      </div>
-    </div>
+<div id="app-header">
+  <h1>Nexus</h1>
+  <div id="weather-widget" style="display:flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--muted)"></div>
+  <div style="display:flex;gap:8px">
+    <button onclick="showView('feed')">🏠</button>
+    <button onclick="showView('messages')">💬</button>
+    <button onclick="showView('profile')">👤</button>
+    <button onclick="logout()">Déconnexion</button>
+  </div>
+</div>
 
     <!-- Fil de posts -->
     <div id="compose">
